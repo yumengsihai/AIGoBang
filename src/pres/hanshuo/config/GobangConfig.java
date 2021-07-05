@@ -1,5 +1,9 @@
 package pres.hanshuo.config;
 
+
+/**
+ * @author Li Hanshuo
+ */
 public interface GobangConfig {
 
     //棋盘左上角的坐标

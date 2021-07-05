@@ -9,6 +9,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
+
+/**
+ * @author Li Hanshuo
+ */
 public class GobangUI extends JFrame implements GobangConfig {
 
     private ArrayList<Piece> pieces = new ArrayList<Piece>(225);

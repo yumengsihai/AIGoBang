@@ -2,6 +2,9 @@ package pres.hanshuo.pojo;
 
 import java.util.HashMap;
 
+/**
+ * @author Li Hanshuo
+ */
 public class Rules {
     private int[][] coordinates;
 

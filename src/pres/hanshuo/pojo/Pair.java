@@ -1,6 +1,7 @@
 package pres.hanshuo.pojo;
 
 /**
+ * @author Li Hanshuo
  * 自定义的一种数据结构：
  * Pair(Left, Right)
  */

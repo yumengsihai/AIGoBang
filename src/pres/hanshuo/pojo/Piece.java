@@ -3,6 +3,9 @@ package pres.hanshuo.pojo;
 import java.awt.*;
 import java.util.Objects;
 
+/**
+ * @author Li Hanshuo
+ */
 public class Piece {
 
     private int x;

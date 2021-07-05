@@ -12,6 +12,10 @@ import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 
+/**
+ * @author Li Hanshuo
+ */
+
 public class GobangListener extends ListenerImpl{
 
     private int[][] coordinates = new int[15][15];    //棋子坐标

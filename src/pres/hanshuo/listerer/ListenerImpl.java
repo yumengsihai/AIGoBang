@@ -5,6 +5,9 @@ import pres.hanshuo.config.GobangConfig;
 import java.awt.*;
 import java.awt.event.*;
 
+/**
+ * @author Li Hanshuo
+ */
 public class ListenerImpl implements MouseListener, KeyListener, MouseMotionListener, ActionListener, GobangConfig {
 
     @Override

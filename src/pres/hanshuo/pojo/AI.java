@@ -3,6 +3,10 @@ package pres.hanshuo.pojo;
 import java.util.Arrays;
 import java.util.HashMap;
 
+
+/**
+ * @author Li Hanshuo
+ */
 public class AI {
     private int[][] rewards;
     private Integer reward;
