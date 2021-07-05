@@ -1,5 +1,9 @@
 package pres.hanshuo.pojo;
 
+/**
+ * 自定义的一种数据结构：
+ * Pair(Left, Right)
+ */
 public class Pair {
     private int left;
     private int right;

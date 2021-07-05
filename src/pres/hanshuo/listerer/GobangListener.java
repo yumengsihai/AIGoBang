@@ -1,31 +1,36 @@
 package pres.hanshuo.listerer;
 
+import pres.hanshuo.pojo.AI;
 import pres.hanshuo.pojo.Pair;
 import pres.hanshuo.pojo.Piece;
+import pres.hanshuo.pojo.Rules;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
-import java.util.Stack;
 
 public class GobangListener extends ListenerImpl{
 
     private int[][] coordinates = new int[15][15];    //棋子坐标
+    private int[][] rewards = new int[15][15];    //权值坐标
+    private int reward = 10;    //初始权值
     private ArrayList<Piece> pieces;
     private Graphics graphics;
     private boolean turn = false; //黑白棋交换
     private JFrame jFrame;
     private boolean start = false; //判断棋局是否开始
     private Stack<Pair> stack = new Stack<Pair>();
+    private boolean isComp = false; //游戏开始时默认不是人机对战，是人人对战
+    private Rules rules = new Rules(coordinates);   //规则对象，并将棋子坐标传入
+    private AI ai = new AI(rewards, reward); //传入AI对象，作为人机对战是下棋的决策
+
 
     public void setJFrame(JFrame jFrame) {
         this.jFrame = jFrame;
     }
-
     public void setGraphics(Graphics graphics) {
         this.graphics = graphics;
     }
@@ -57,9 +62,9 @@ public class GobangListener extends ListenerImpl{
         //根据行列值将棋子放在中心位置
         int xCorrection = column * SIZE + X - SIZE / 2;
         int yCorrection = row * SIZE + Y - SIZE / 2;
-        if (start == true){
+        if (start && !isComp){
             if (coordinates[row][column] == 0 && row <= 14 && column <= 14){    //检查当前位置是否可以放入棋子
-                if (turn == false){
+                if (!turn){
                     graphics.setColor(Color.black);
                     graphics.fillOval(xCorrection, yCorrection, SIZE, SIZE);
                     Piece piece = new Piece(xCorrection, yCorrection, Color.black);
@@ -67,9 +72,10 @@ public class GobangListener extends ListenerImpl{
                     coordinates[row][column] = 1;//黑棋为1，放入array中
                     stack.push(new Pair(row, column));//入栈
                     turn = true;
-                    if (tiltLeft(row, column, coordinates) || titleRight(row, column, coordinates) ||
-                            horizontal(row, column, coordinates) || vertical(row, column, coordinates)){
+                    if (rules.tiltLeft(row, column, coordinates) || rules.titleRight(row, column, coordinates) ||
+                            rules.horizontal(row, column, coordinates) || rules.vertical(row, column, coordinates)){
                         JOptionPane.showMessageDialog(null, "黑棋获胜！", "Win", JOptionPane.PLAIN_MESSAGE);
+                        turn = false;
                         pieces.clear();
                         coordinates = new int[15][15];
                         stack.clear();
@@ -85,9 +91,10 @@ public class GobangListener extends ListenerImpl{
                     coordinates[row][column] = 2;//将棋子位置存入array中
                     stack.push(new Pair(row, column));//入栈
                     turn = false;
-                    if (tiltLeft(row, column, coordinates) || titleRight(row, column, coordinates) ||
-                            horizontal(row, column, coordinates) || vertical(row, column, coordinates)){
+                    if (rules.tiltLeft(row, column, coordinates) || rules.titleRight(row, column, coordinates) ||
+                            rules.horizontal(row, column, coordinates) || rules.vertical(row, column, coordinates)){
                         JOptionPane.showMessageDialog(null, "白棋获胜！", "Win", JOptionPane.PLAIN_MESSAGE);
+                        turn = false;
                         pieces.clear();
                         coordinates = new int[15][15];
                         stack.clear();
@@ -100,19 +107,100 @@ public class GobangListener extends ListenerImpl{
                 JOptionPane.showMessageDialog(null, "请换一个位置", "Error", JOptionPane.PLAIN_MESSAGE);
             }
         }
+        else if (start && isComp){
+            if (coordinates[row][column] == 0 && row <= 14 && column <= 14){    //检查当前位置是否可以放入棋子
+                if (!turn){
+                    graphics.setColor(Color.black);
+                    graphics.fillOval(xCorrection, yCorrection, SIZE, SIZE);
+                    Piece piece = new Piece(xCorrection, yCorrection, Color.black);
+                    pieces.add(piece);  //存入arraylist中
+                    coordinates[row][column] = 1;//黑棋为1，放入array中
+                    stack.push(new Pair(row, column));//入栈
+                    turn = true;
+
+                    ai.AICheck(coordinates, rewards);
+                    for (int i = 0; i < rewards.length; i++) {
+                        System.out.println(Arrays.toString(rewards[i]));
+                    }
+
+                    if (rules.tiltLeft(row, column, coordinates) || rules.titleRight(row, column, coordinates) ||
+                            rules.horizontal(row, column, coordinates) || rules.vertical(row, column, coordinates)){
+                        JOptionPane.showMessageDialog(null, "黑棋获胜！", "Win", JOptionPane.PLAIN_MESSAGE);
+                        turn = false;
+                        pieces.clear();
+                        coordinates = new int[15][15];
+                        rewards = new int[15][15];
+                        stack.clear();
+                        start = false;
+                        jFrame.repaint();
+                    }
+                }
+
+            }
+            else{
+                JOptionPane.showMessageDialog(null, "请换一个位置", "Error", JOptionPane.PLAIN_MESSAGE);
+            }
+        }
         else{
             JOptionPane.showMessageDialog(null, "请点击开始新游戏", "Error", JOptionPane.PLAIN_MESSAGE);
 
         }
+    }
 
-
-
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (isComp && start){
+            if (turn){
+                graphics.setColor(Color.white);
+                ai.AICheck(coordinates, rewards);
+                for (int i = 0; i < rewards.length; i++) {
+                    System.out.println(Arrays.toString(rewards[i]));
+                }
+                //确定rewards数组中的最大值并获取其索引
+                int maxX = 0;
+                int maxY = 0;
+                int max = rewards[0][0];
+                for (int i = 0; i < rewards.length; i++){
+                    for (int j = 0; j < rewards.length; j++){
+                        if (rewards[i][j] > max){
+                            max = rewards[i][j];
+                            maxX = i;
+                            maxY = j;
+                        }
+                    }
+                }
+                System.out.println("max = " + max);
+                System.out.println("maxX = " + maxX);
+                System.out.println("maxY = " + maxY);
+                int xCorrection1 = maxY * SIZE + X - SIZE / 2;
+                int yCorrection1 = maxX * SIZE + Y - SIZE / 2;
+                graphics.fillOval(xCorrection1, yCorrection1, SIZE, SIZE);
+                Piece piece = new Piece(xCorrection1, yCorrection1, Color.white);
+                pieces.add(piece);
+                coordinates[maxX][maxY] = 2;//将棋子位置存入array中
+                stack.push(new Pair(maxX, maxY));//入栈
+                turn = false;
+                rewards = new int[15][15];
+                if (rules.tiltLeft(maxX, maxY, coordinates) || rules.titleRight(maxX, maxY, coordinates) ||
+                        rules.horizontal(maxX, maxY, coordinates) || rules.vertical(maxX, maxY, coordinates)){
+                    JOptionPane.showMessageDialog(null, "白棋获胜！", "Win", JOptionPane.PLAIN_MESSAGE);
+                    turn = false;
+                    pieces.clear();
+                    coordinates = new int[15][15];
+                    rewards = new int[15][15];
+                    stack.clear();
+                    start = false;
+                    jFrame.repaint();
+                }
+            }
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
 
         if (e.getActionCommand().equals("开始新游戏")){
+            turn = false;
             start = true;
             pieces.clear();
             coordinates = new int[15][15];
@@ -120,22 +208,40 @@ public class GobangListener extends ListenerImpl{
             jFrame.repaint();
         }
         else if (e.getActionCommand().equals("悔棋")){
-            if (stack.size() == 0){
-                JOptionPane.showMessageDialog(null, "您不能在悔棋了", "Error", JOptionPane.PLAIN_MESSAGE);
-                return;
-            }
-            //如果白棋悔棋，则还是白棋继续。如果是黑棋悔棋，则还是黑棋
-            if (turn == true){
-                turn = false;
-            }
-            else {
-                turn = true;
-            }
+            if (!isComp){
+                if (stack.size() == 0){
+                    JOptionPane.showMessageDialog(null, "您不能在悔棋了", "Error", JOptionPane.PLAIN_MESSAGE);
+                    return;
+                }
+                //如果白棋悔棋，则还是白棋继续。如果是黑棋悔棋，则还是黑棋
+                if (turn){
+                    turn = false;
+                }
+                else {
+                    turn = true;
+                }
 
-            removeFirstItem(pieces.size() - 1, pieces);
-            Pair pair = stack.pop();
-            coordinates[pair.getLeft()][pair.getRight()] = 0;
-            jFrame.repaint();
+                removeFirstItem(pieces.size() - 1, pieces);
+                Pair pair = stack.pop();
+                coordinates[pair.getLeft()][pair.getRight()] = 0;
+                jFrame.repaint();
+            }
+            else{
+                if (stack.size() == 0){
+                    JOptionPane.showMessageDialog(null, "您不能在悔棋了", "Error", JOptionPane.PLAIN_MESSAGE);
+                    return;
+                }
+                //只有玩家才会悔棋，所以悔棋后直接是黑棋继续
+                turn = false;
+                //直接删除连续的黑棋和白棋
+                removeFirstItem(pieces.size() - 1, pieces);
+                removeFirstItem(pieces.size() - 1, pieces);
+                Pair pair1 = stack.pop();
+                coordinates[pair1.getLeft()][pair1.getRight()] = 0;
+                Pair pair2 = stack.pop();
+                coordinates[pair2.getLeft()][pair2.getRight()] = 0;
+                jFrame.repaint();
+            }
         }
         else if (e.getActionCommand().equals("认输") && start){
             if (turn == true){
@@ -159,119 +265,15 @@ public class GobangListener extends ListenerImpl{
             int selectedIndex = jComboBox.getSelectedIndex();
             switch (selectedIndex){
                 case 0 :
+                    isComp = false;
                     JOptionPane.showMessageDialog(null, "请直接点击开始新游戏", "Warning", JOptionPane.PLAIN_MESSAGE);
                     break;
                 case 1:
-                    JOptionPane.showMessageDialog(null, "暂不支持此功能！", "Error", JOptionPane.PLAIN_MESSAGE);
+                    isComp = true;
+                    JOptionPane.showMessageDialog(null, "请直接点击开始新游戏！", "Error", JOptionPane.PLAIN_MESSAGE);
                     break;
             }
         }
-    }
-
-    //判断左斜方向是否赢了
-    public boolean tiltLeft(int x, int y, int[][] coordinates){
-        int count = 1;  //记录棋子个数
-        //先向左上方向检查
-        int j = y;
-        for (int i = x - 1; i >= 0 ; i--) {
-            if (j > 0 && coordinates[x][y] == coordinates[i][j - 1]){
-                count++;
-                j--;
-            }
-            else{
-                j = y;
-                break;
-            }
-        }
-        //在向右下方检查
-        for (int i = x + 1; i < coordinates.length; i++) {
-            if (j < 14 && coordinates[x][y] == coordinates[i][j + 1]){
-                count++;
-                j++;
-            }
-            else{
-                break;
-            }
-        }
-        return count == 5;
-    }
-    //判断右斜方向是否赢棋
-    public boolean titleRight(int x, int y, int[][] coordinates){
-        int count = 1;
-        int j = y;
-        //先向右上方检查
-        for (int i = x - 1; i > 0; i--) {
-            if (j < 14 && coordinates[x][y] == coordinates[i][j + 1]){
-                count++;
-                j++;
-            }
-            else{
-                j = y;
-                break;
-            }
-        }
-        //在向左下方检查
-        for (int i = x + 1; i < coordinates.length ; i++) {
-            if (j > 0 && coordinates[x][y] == coordinates[i][j - 1]){
-                count++;
-                j--;
-            }
-            else {
-                break;
-            }
-        }
-        return count == 5;
-    }
-
-    //水平方向检查
-    public boolean horizontal(int x, int y, int[][] coordinates){
-        int count = 1;
-        int i;
-        //先向左检查
-        for (i = y; i > 0; i--) {
-            if (coordinates[x][y] == coordinates[x][i-1]){
-                count++;
-            }
-            else {
-                break;
-            }
-        }
-        //在向右检查
-        for (i = y; i < coordinates.length-1; i++) {
-            if (coordinates[x][y] == coordinates[x][i+1]){
-                count++;
-            }
-            else {
-                break;
-            }
-        }
-        return count == 5;
-    }
-
-    //垂直方向检查
-    public boolean vertical(int x, int y, int[][] coordinates){
-        int count = 1;
-        int i;
-        //先向上检查
-        for (i = x; i > 0 ; i--) {
-            if (coordinates[x][y] == coordinates[i-1][y]){
-                count++;
-            }
-            else{
-                i = x;
-                break;
-            }
-        }
-        //在向下检查
-        for ( i = x; i < coordinates.length-1; i++) {
-            if (coordinates[x][y] == coordinates[i+1][y]){
-                count++;
-            }
-            else{
-                break;
-            }
-        }
-        return count == 5;
     }
 
 }
